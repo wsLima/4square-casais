@@ -162,25 +162,21 @@ export default function HostPage() {
               </button>
             </div>
 
-            <div className="bg-wine-pale rounded-xl p-5 mb-4 min-h-[100px]">
-              <span
-                className={`inline-block text-xs px-3 py-1 rounded-full font-medium mb-3 ${
-                  state.phase === 'waiting'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : state.phase === 'active'
+            {state.phase !== 'waiting' && (
+              <div className="bg-wine-pale rounded-xl p-5 mb-4">
+                <span
+                  className={`inline-block text-xs px-3 py-1 rounded-full font-medium mb-3 ${
+                    state.phase === 'active'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-indigo-100 text-indigo-800'
-                }`}
-              >
-                {state.phase === 'waiting'
-                  ? 'Aguardando'
-                  : state.phase === 'active'
-                    ? 'Votação aberta'
-                    : 'Resultados'}
-              </span>
-              <h3 className="font-display text-lg text-wine mb-2">{sit.title}</h3>
-              <p className="text-sm leading-relaxed whitespace-pre-line text-prose">{sit.text}</p>
-            </div>
+                  }`}
+                >
+                  {state.phase === 'active' ? 'Votação aberta' : 'Resultados'}
+                </span>
+                <h3 className="font-display text-lg text-wine mb-2">{sit.title}</h3>
+                <p className="text-sm leading-relaxed whitespace-pre-line text-prose">{sit.text}</p>
+              </div>
+            )}
 
             {state.phase === 'results' && sit.comment && (
               <div
