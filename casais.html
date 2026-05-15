@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dinâmica de Casais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --wine: #6B1E2E;
+    --wine-light: #8B2E42;
+    --wine-pale: #F5E8EC;
+    --gold: #C9933A;
+    --gold-light: #E8B560;
+    --cream: #FAF6F0;
+    --dark: #1A1018;
+    --text: #3D2030;
+    --muted: #8A6A76;
+    --border: rgba(107,30,46,0.15);
+    --fire: #E85D2A;
+    --silence: #4A6B8A;
+    --mature: #2E7D4F;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  h1, h2 { font-family: 'Playfair Display', serif; }
+
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 440px;
+    animation: fadeIn 0.4s ease;
+  }
+  .screen.active { display: flex; flex-direction: column; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* === SCREEN: LOGIN === */
+  .login-hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .login-hero .hearts {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .login-hero h1 { font-size: 2.2rem; color: var(--wine); line-height: 1.2; }
+  .login-hero p { color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem; line-height: 1.6; }
+
+  .login-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+  }
+  .login-card label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .login-card input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 1.25rem;
+  }
+  .login-card input:focus {
+    border-color: var(--wine);
+    box-shadow: 0 0 0 3px rgba(107,30,46,0.1);
+  }
+  .login-card input::placeholder { color: var(--muted); }
+
+  .btn-enter {
+    width: 100%;
+    padding: 1rem;
+    background: var(--wine);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .btn-enter:hover { background: var(--wine-light); transform: translateY(-1px); }
+  .btn-enter:active { transform: scale(0.98); }
+
+  /* === SCREEN: WAITING === */
+  .waiting-wrap {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .couple-name-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--wine);
+    margin-bottom: 0.5rem;
+  }
+  .waiting-icon {
+    font-size: 4rem;
+    display: block;
+    margin: 1.5rem auto;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .waiting-text {
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+  .pulse-dots { display: inline-flex; gap: 6px; margin-top: 1.5rem; }
+  .pulse-dots span {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--wine);
+    opacity: 0.3;
+    animation: dot-pulse 1.2s ease-in-out infinite;
+  }
+  .pulse-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .pulse-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot-pulse { 0%,100%{opacity:0.2} 50%{opacity:0.9} }
+
+  /* === SCREEN: VOTING === */
+  .voting-header {
+    margin-bottom: 1.75rem;
+  }
+  .voting-badge {
+    display: inline-block;
+    background: var(--wine-pale);
+    color: var(--wine);
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .voting-question {
+    font-size: 1.3rem;
+    font-family: 'Playfair Display', serif;
+    color: var(--text);
+    line-height: 1.4;
+    white-space: pre-line;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+  .option-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    width: 100%;
+  }
+  .option-fire { border-color: rgba(232,93,42,0.25); }
+  .option-fire:hover, .option-fire.selected { background: rgba(232,93,42,0.08); border-color: var(--fire); }
+  .option-silence { border-color: rgba(74,107,138,0.25); }
+  .option-silence:hover, .option-silence.selected { background: rgba(74,107,138,0.08); border-color: var(--silence); }
+  .option-mature { border-color: rgba(46,125,79,0.25); }
+  .option-mature:hover, .option-mature.selected { background: rgba(46,125,79,0.08); border-color: var(--mature); }
+
+  .option-icon { font-size: 2rem; flex-shrink: 0; }
+  .option-content { flex: 1; }
+  .option-name { font-weight: 500; font-size: 0.95rem; color: var(--text); }
+  .option-desc { font-size: 0.82rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+  .option-fire .option-name { color: var(--fire); }
+  .option-silence .option-name { color: var(--silence); }
+  .option-mature .option-name { color: var(--mature); }
+
+  .btn-vote {
+    margin-top: 1.25rem;
+    width: 100%;
+    padding: 1rem;
+    background: var(--wine);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, opacity 0.2s;
+    opacity: 0.4;
+  }
+  .btn-vote.ready { opacity: 1; }
+  .btn-vote.ready:hover { background: var(--wine-light); transform: translateY(-1px); }
+  .btn-vote:disabled { cursor: not-allowed; }
+
+  /* === SCREEN: VOTED === */
+  .voted-wrap { text-align: center; padding: 2rem 0; }
+  .voted-icon { font-size: 4rem; display: block; margin-bottom: 1.5rem; }
+  .voted-big { font-size: 1.75rem; font-family: 'Playfair Display', serif; color: var(--wine); margin-bottom: 0.75rem; }
+  .voted-sub { color: var(--muted); line-height: 1.7; font-size: 0.95rem; }
+  .voted-choice {
+    margin: 1.5rem auto;
+    max-width: 300px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .voted-choice strong { color: var(--wine); }
+
+  /* === SCREEN: RESULTS === */
+  .results-wrap { padding: 0.5rem 0; }
+  .results-wrap h2 { font-size: 1.5rem; color: var(--wine); margin-bottom: 1.5rem; text-align: center; }
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+  }
+  .result-emoji { font-size: 1.75rem; flex-shrink: 0; }
+  .result-info { flex: 1; }
+  .result-label { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+  .result-bar-wrap { margin-top: 6px; height: 8px; background: #F0E8ED; border-radius: 4px; overflow: hidden; }
+  .result-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .result-pct { font-size: 0.9rem; font-weight: 500; min-width: 40px; text-align: right; flex-shrink: 0; }
+  .result-fire .result-bar { background: var(--fire); }
+  .result-fire .result-pct { color: var(--fire); }
+  .result-silence .result-bar { background: var(--silence); }
+  .result-silence .result-pct { color: var(--silence); }
+  .result-mature .result-bar { background: var(--mature); }
+  .result-mature .result-pct { color: var(--mature); }
+
+  .next-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+    background: var(--wine-pale);
+    border-radius: 10px;
+    animation: gentle-pulse 2s ease-in-out infinite;
+  }
+  @keyframes gentle-pulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: LOGIN -->
+<div class="screen active" id="screen-login">
+  <div class="login-hero">
+    <span class="hearts">💑</span>
+    <h1>Dinâmica do Casal</h1>
+    <p>Bem-vindos à noite especial! Digite o nome do casal para participar.</p>
+  </div>
+  <div class="login-card">
+    <label for="couple-input">Nome do casal</label>
+    <input type="text" id="couple-input" placeholder="Ex: João e Maria" autocomplete="off" maxlength="50" />
+    <button class="btn-enter" onclick="enterDynamic()">Entrar na Dinâmica ❤️</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: WAITING -->
+<div class="screen" id="screen-waiting">
+  <div class="waiting-wrap">
+    <div class="couple-name-display" id="waiting-name"></div>
+    <span class="waiting-icon">⏳</span>
+    <p class="waiting-text">
+      Vocês estão conectados!<br>
+      Aguardando o apresentador<br>
+      iniciar a dinâmica…
+    </p>
+    <div class="pulse-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3: VOTING -->
+<div class="screen" id="screen-voting">
+  <div class="voting-header">
+    <span class="voting-badge" id="voting-badge">Situação 1 de 4</span>
+    <p class="voting-question" id="voting-question"></p>
+  </div>
+  <div class="options">
+    <button class="option-btn option-fire" onclick="selectOption('fire')" id="opt-fire">
+      <span class="option-icon">🔥</span>
+      <div class="option-content">
+        <div class="option-name">Reação da Carne (Moisés)</div>
+        <div class="option-desc">Resposta impulsiva, dominada pela emoção</div>
+      </div>
+    </button>
+    <button class="option-btn option-silence" onclick="selectOption('silence')" id="opt-silence">
+      <span class="option-icon">😶</span>
+      <div class="option-content">
+        <div class="option-name">Guardei pra Mim (Neemias)</div>
+        <div class="option-desc">Silêncio, reflexão ou recolhimento</div>
+      </div>
+    </button>
+    <button class="option-btn option-mature" onclick="selectOption('mature')" id="opt-mature">
+      <span class="option-icon">❤️</span>
+      <div class="option-content">
+        <div class="option-name">Reação Madura (José)</div>
+        <div class="option-desc">Resposta guiada por graça e maturidade</div>
+      </div>
+    </button>
+  </div>
+  <button class="btn-vote" id="btn-vote" onclick="submitVote()" disabled>Confirmar resposta</button>
+</div>
+
+<!-- SCREEN 4: VOTED (waiting for results) -->
+<div class="screen" id="screen-voted">
+  <div class="voted-wrap">
+    <span class="voted-icon">✅</span>
+    <div class="voted-big">Resposta enviada!</div>
+    <p class="voted-sub">Aguardando o apresentador<br>encerrar a votação…</p>
+    <div class="voted-choice" id="voted-choice-display"></div>
+  </div>
+</div>
+
+<!-- SCREEN 5: RESULTS -->
+<div class="screen" id="screen-results">
+  <div class="results-wrap">
+    <h2>Resultados 📊</h2>
+    <div class="result-row result-fire">
+      <span class="result-emoji">🔥</span>
+      <div class="result-info">
+        <div class="result-label">Reação da Carne</div>
+        <div class="result-bar-wrap"><div class="result-bar" id="res-bar-fire" style="width:0%"></div></div>
+      </div>
+      <span class="result-pct" id="res-pct-fire">0%</span>
+    </div>
+    <div class="result-row result-silence">
+      <span class="result-emoji">😶</span>
+      <div class="result-info">
+        <div class="result-label">Guardei pra Mim</div>
+        <div class="result-bar-wrap"><div class="result-bar" id="res-bar-silence" style="width:0%"></div></div>
+      </div>
+      <span class="result-pct" id="res-pct-silence">0%</span>
+    </div>
+    <div class="result-row result-mature">
+      <span class="result-emoji">❤️</span>
+      <div class="result-info">
+        <div class="result-label">Reação Madura</div>
+        <div class="result-bar-wrap"><div class="result-bar" id="res-bar-mature" style="width:0%"></div></div>
+      </div>
+      <span class="result-pct" id="res-pct-mature">0%</span>
+    </div>
+    <div class="next-hint" id="next-hint">Aguardando próxima situação…</div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'culto_casais_v1';
+let myId = 'couple_' + Math.random().toString(36).slice(2, 10);
+let myName = '';
+let myVotes = {};
+let lastPhase = null;
+let lastSit = null;
+
+function getState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  return saved ? JSON.parse(saved) : { phase: 'waiting', currentSit: 0, votes: {}, couples: {} };
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function enterDynamic() {
+  const val = document.getElementById('couple-input').value.trim();
+  if (!val) {
+    document.getElementById('couple-input').focus();
+    document.getElementById('couple-input').style.borderColor = 'var(--wine)';
+    return;
+  }
+  myName = val;
+  document.getElementById('waiting-name').textContent = '💑 ' + myName;
+
+  // Register couple via BroadcastChannel
+  const bc = new BroadcastChannel('culto_casais');
+  bc.postMessage({ type: 'join', id: myId, name: myName });
+  bc.close();
+
+  // Also write to localStorage so host picks it up
+  const state = getState();
+  state.couples = state.couples || {};
+  state.couples[myId] = { id: myId, name: myName };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+  showScreen('screen-waiting');
+  startPolling();
+}
+
+document.getElementById('couple-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') enterDynamic();
+});
+
+let selectedOption = null;
+
+function selectOption(opt) {
+  selectedOption = opt;
+  ['fire', 'silence', 'mature'].forEach(o => {
+    document.getElementById('opt-' + o).classList.toggle('selected', o === opt);
+  });
+  const voteBtn = document.getElementById('btn-vote');
+  voteBtn.disabled = false;
+  voteBtn.classList.add('ready');
+}
+
+function submitVote() {
+  if (!selectedOption) return;
+  const state = getState();
+  const sitKey = `sit_${state.currentSit}`;
+  state.votes = state.votes || {};
+  state.votes[sitKey] = state.votes[sitKey] || {};
+  state.votes[sitKey][myId] = selectedOption;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  myVotes[sitKey] = selectedOption;
+
+  const bc = new BroadcastChannel('culto_casais');
+  bc.postMessage({ type: 'vote', id: myId, vote: selectedOption, sitKey });
+  bc.close();
+
+  const labels = { fire: '🔥 Reação da Carne', silence: '😶 Guardei pra Mim', mature: '❤️ Reação Madura' };
+  document.getElementById('voted-choice-display').innerHTML = `Você escolheu:<br><strong>${labels[selectedOption]}</strong>`;
+  showScreen('screen-voted');
+}
+
+const situations = [
+  'Situação 1 de 4',
+  'Situação 2 de 4',
+  'Situação 3 de 4',
+  'Situação 4 de 4 — A mais temida'
+];
+const situationTexts = [
+  'Seu cônjuge esqueceu uma data importante.\n\nE aí… qual seria sua reação?',
+  'Seu cônjuge respondeu de forma atravessada depois de um dia difícil.',
+  'Uma discussão antiga voltou à tona… mais uma vez.',
+  'Seu cônjuge olha para você e fala:\n\n"Precisamos conversar…"'
+];
+
+function poll() {
+  const state = getState();
+  const phase = state.phase;
+  const sit = state.currentSit;
+  const sitKey = `sit_${sit}`;
+
+  // Situation changed → reset vote
+  if (sit !== lastSit) {
+    selectedOption = null;
+    myVotes = {};
+    ['fire', 'silence', 'mature'].forEach(o => {
+      document.getElementById('opt-' + o).classList.remove('selected');
+    });
+    const voteBtn = document.getElementById('btn-vote');
+    voteBtn.disabled = true;
+    voteBtn.classList.remove('ready');
+    document.getElementById('voting-badge').textContent = situations[sit] || `Situação ${sit + 1}`;
+    document.getElementById('voting-question').textContent = situationTexts[sit] || '';
+    lastSit = sit;
+  }
+
+  const currentScreen = document.querySelector('.screen.active')?.id;
+  const alreadyVoted = myVotes[sitKey] || (state.votes?.[sitKey]?.[myId]);
+
+  if (!myName) {
+    if (currentScreen !== 'screen-login') showScreen('screen-login');
+    return;
+  }
+
+  if (phase === 'waiting') {
+    if (currentScreen !== 'screen-waiting') showScreen('screen-waiting');
+  } else if (phase === 'active') {
+    if (alreadyVoted) {
+      if (currentScreen !== 'screen-voted') showScreen('screen-voted');
+    } else {
+      if (currentScreen !== 'screen-voting') showScreen('screen-voting');
+    }
+  } else if (phase === 'results') {
+    // Calculate and show results
+    const votes = state.votes?.[sitKey] || {};
+    const counts = { fire: 0, silence: 0, mature: 0 };
+    Object.values(votes).forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+    const total = counts.fire + counts.silence + counts.mature || 1;
+    ['fire', 'silence', 'mature'].forEach(k => {
+      const pct = Math.round(counts[k] / total * 100);
+      document.getElementById('res-bar-' + k).style.width = pct + '%';
+      document.getElementById('res-pct-' + k).textContent = pct + '%';
+    });
+    if (currentScreen !== 'screen-results') showScreen('screen-results');
+  }
+
+  lastPhase = phase;
+}
+
+function startPolling() {
+  setInterval(poll, 800);
+}
+
+// Handle BroadcastChannel for real-time
+const bc = new BroadcastChannel('culto_casais');
+bc.onmessage = (e) => {
+  if (e.data && !e.data.type) {
+    // It's a state update from host
+    poll();
+  }
+};
+</script>
+</body>
+</html>

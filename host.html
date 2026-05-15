@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dinâmica Casais — Controle do Apresentador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --wine: #6B1E2E;
+    --wine-light: #8B2E42;
+    --wine-pale: #F5E8EC;
+    --gold: #C9933A;
+    --gold-light: #E8B560;
+    --cream: #FAF6F0;
+    --dark: #1A1018;
+    --text: #3D2030;
+    --muted: #8A6A76;
+    --border: rgba(107,30,46,0.15);
+    --fire: #E85D2A;
+    --silence: #4A6B8A;
+    --mature: #2E7D4F;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 { font-size: 2.2rem; color: var(--wine); }
+  .header p { color: var(--muted); font-size: 0.95rem; margin-top: 0.5rem; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1100px; margin: 0 auto; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+  }
+  .card h2 { font-size: 1.3rem; color: var(--wine); margin-bottom: 1.25rem; }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--wine-pale);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--wine);
+    font-weight: 500;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+  .dot.active { background: var(--mature); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .couples-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .couple-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    transition: background 0.15s;
+  }
+  .couple-item:last-child { border-bottom: none; }
+  .couple-item:hover { background: var(--wine-pale); }
+  .couple-name { font-weight: 500; }
+  .couple-badge {
+    font-size: 0.75rem;
+    background: var(--wine-pale);
+    color: var(--wine);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.7rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-primary {
+    background: var(--wine);
+    color: white;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1rem;
+    font-size: 1rem;
+    padding: 0.9rem;
+  }
+  .btn-primary:hover { background: var(--wine-light); transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: var(--wine-pale);
+    color: var(--wine);
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  .btn-secondary:hover { background: #EAD5DB; }
+
+  .situation-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .nav-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--wine-pale);
+    color: var(--wine);
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-btn:hover { background: #EAD5DB; }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .situation-counter { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+
+  .situation-card {
+    background: var(--wine-pale);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    min-height: 100px;
+  }
+  .situation-card h3 { font-size: 1.1rem; color: var(--wine); margin-bottom: 0.5rem; }
+  .situation-text { font-size: 0.95rem; line-height: 1.6; color: var(--text); }
+
+  .vote-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+  .vote-item {
+    border-radius: 12px;
+    padding: 1rem 0.75rem;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .vote-fire { background: rgba(232,93,42,0.1); border-color: rgba(232,93,42,0.3); }
+  .vote-silence { background: rgba(74,107,138,0.1); border-color: rgba(74,107,138,0.3); }
+  .vote-mature { background: rgba(46,125,79,0.1); border-color: rgba(46,125,79,0.3); }
+  .vote-emoji { font-size: 1.8rem; display: block; margin-bottom: 0.3rem; }
+  .vote-label { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+  .vote-count { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-top: 0.3rem; }
+  .vote-fire .vote-count { color: var(--fire); }
+  .vote-silence .vote-count { color: var(--silence); }
+  .vote-mature .vote-count { color: var(--mature); }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .progress-fire { background: var(--fire); }
+  .progress-silence { background: var(--silence); }
+  .progress-mature { background: var(--mature); }
+
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+  #qrcode { background: white; padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+  .qr-url {
+    font-size: 0.8rem;
+    color: var(--muted);
+    word-break: break-all;
+    text-align: center;
+    background: var(--wine-pale);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    width: 100%;
+  }
+
+  .phase-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+  }
+  .phase-waiting { background: #FFF3CD; color: #856404; }
+  .phase-active { background: #D1FAE5; color: #065F46; }
+  .phase-results { background: #E0E7FF; color: #3730A3; }
+
+  .comment-box {
+    background: white;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 10px 10px 0;
+    padding: 1rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-top: 0.75rem;
+    font-style: italic;
+  }
+
+  .tabs { display: flex; gap: 4px; background: var(--wine-pale); padding: 4px; border-radius: 10px; margin-bottom: 1.25rem; }
+  .tab {
+    flex: 1; padding: 0.5rem; border: none; background: none;
+    border-radius: 7px; font-size: 0.85rem; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; color: var(--muted); transition: all 0.2s;
+  }
+  .tab.active { background: white; color: var(--wine); font-weight: 500; }
+
+  .state-waiting, .state-active, .state-results { display: none; }
+  .state-waiting.show, .state-active.show, .state-results.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Dinâmica do Casal</h1>
+  <p>Painel do Apresentador — Controle total da dinâmica</p>
+</div>
+
+<div class="grid">
+
+  <!-- LEFT: Control panel -->
+  <div>
+    <div class="card">
+      <div class="status-bar">
+        <div class="dot" id="status-dot"></div>
+        <span id="status-text">Aguardando casais entrarem...</span>
+        <span style="margin-left:auto; font-weight:700; color: var(--wine)" id="couple-count">0 casais</span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('situacoes')">Situações</button>
+        <button class="tab" onclick="switchTab('votacoes')">Votações</button>
+      </div>
+
+      <!-- Tab: Situações -->
+      <div id="tab-situacoes">
+        <div class="situation-nav">
+          <button class="nav-btn" id="prev-btn" onclick="changeSit(-1)" disabled>&#8592;</button>
+          <span class="situation-counter" id="sit-counter">Situação 1 de 4</span>
+          <button class="nav-btn" id="next-btn" onclick="changeSit(1)">&#8594;</button>
+        </div>
+
+        <div class="situation-card">
+          <span class="phase-badge phase-waiting" id="phase-badge">Aguardando</span>
+          <h3 id="sit-title"></h3>
+          <p class="situation-text" id="sit-text"></p>
+        </div>
+
+        <div id="comment-area"></div>
+
+        <div class="state-waiting show" id="state-waiting">
+          <button class="btn btn-primary" id="btn-start" onclick="startVoting()">
+            ▶ Iniciar Votação
+          </button>
+        </div>
+
+        <div class="state-active" id="state-active">
+          <button class="btn btn-primary" style="background: var(--silence)" onclick="showResults()">
+            📊 Encerrar e Ver Resultados
+          </button>
+        </div>
+
+        <div class="state-results" id="state-results">
+          <div class="vote-grid">
+            <div class="vote-item vote-fire">
+              <span class="vote-emoji">🔥</span>
+              <div class="vote-label">Da Carne</div>
+              <div class="vote-count" id="count-fire">0</div>
+              <div class="progress-bar"><div class="progress-fill progress-fire" id="bar-fire" style="width:0%"></div></div>
+            </div>
+            <div class="vote-item vote-silence">
+              <span class="vote-emoji">😶</span>
+              <div class="vote-label">Guardei pra mim</div>
+              <div class="vote-count" id="count-silence">0</div>
+              <div class="progress-bar"><div class="progress-fill progress-silence" id="bar-silence" style="width:0%"></div></div>
+            </div>
+            <div class="vote-item vote-mature">
+              <span class="vote-emoji">❤️</span>
+              <div class="vote-label">Madura</div>
+              <div class="vote-count" id="count-mature">0</div>
+              <div class="progress-bar"><div class="progress-fill progress-mature" id="bar-mature" style="width:0%"></div></div>
+            </div>
+          </div>
+          <button class="btn btn-secondary" onclick="resetVotes()">
+            🔄 Nova rodada (limpar votos)
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab: Votações (detalhe casal a casal) -->
+      <div id="tab-votacoes" style="display:none">
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">Respostas individuais dos casais na situação atual.</p>
+        <div id="votes-detail-list"><div class="empty-state">Nenhum voto ainda.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: QR + couples list -->
+  <div style="display:flex; flex-direction:column; gap:1.5rem;">
+    <div class="card">
+      <h2>QR Code para Casais</h2>
+      <div class="qr-wrap">
+        <div id="qrcode"></div>
+        <div class="qr-url" id="qr-url-text">Gerando link...</div>
+      </div>
+      <button class="btn btn-secondary" onclick="copyLink()" style="margin-top:1rem">
+        📋 Copiar link
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Casais Conectados</h2>
+      <div class="couples-list" id="couples-list">
+        <div class="empty-state">Nenhum casal conectado ainda.<br>Compartilhe o QR Code!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'culto_casais_v1';
+
+const situations = [
+  {
+    title: 'Situação 1',
+    text: 'Seu cônjuge esqueceu uma data importante.\n\n(Pausa)\n\nE aí… qual seria sua reação?',
+    comment: '💬 O problema é que muitos casais entram em uma discussão querendo vencer, e não resolver. Quando, na verdade, deveriam conversar com o objetivo de encontrar uma solução e restaurar a paz.'
+  },
+  {
+    title: 'Situação 2',
+    text: 'Seu cônjuge respondeu de forma atravessada depois de um dia difícil.',
+    comment: '💡 Maturidade emocional é entender que nem toda resposta difícil significa falta de amor… às vezes significa apenas cansaço, pressão, ou um coração sobrecarregado.'
+  },
+  {
+    title: 'Situação 3',
+    text: 'Uma discussão antiga voltou à tona… mais uma vez.',
+    comment: '📖 "O amor não guarda rancor." (1 Coríntios 13:5)\n\nCasamentos saudáveis não são aqueles sem conflitos… mas aqueles em que existe disposição para conversar e coração aberto para perdoar.'
+  },
+  {
+    title: 'Situação 4 — A mais temida',
+    text: 'Seu cônjuge olha para você e fala:\n\n"Precisamos conversar…"',
+    comment: '😂 Impressionante como essa frase aumenta a pressão, acelera o coração, tira a paz… e faz a pessoa revisar mentalmente todos os erros cometidos na semana inteira.'
+  }
+];
+
+let state = {
+  currentSit: 0,
+  phase: 'waiting', // waiting | active | results
+  couples: {},
+  votes: {}
+};
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  broadcastState();
+}
+
+function broadcastState() {
+  const bc = new BroadcastChannel('culto_casais');
+  bc.postMessage(state);
+  bc.close();
+}
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) state = JSON.parse(saved);
+  render();
+}
+
+function render() {
+  const sit = situations[state.currentSit];
+  document.getElementById('sit-title').textContent = sit.title;
+  document.getElementById('sit-text').textContent = sit.text;
+  document.getElementById('sit-counter').textContent = `Situação ${state.currentSit + 1} de ${situations.length}`;
+  document.getElementById('prev-btn').disabled = state.currentSit === 0;
+  document.getElementById('next-btn').disabled = state.currentSit === situations.length - 1;
+
+  // Comment
+  const ca = document.getElementById('comment-area');
+  if (state.phase === 'results' && sit.comment) {
+    ca.innerHTML = `<div class="comment-box">${sit.comment.replace(/\n/g, '<br>')}</div>`;
+  } else {
+    ca.innerHTML = '';
+  }
+
+  // Phase states
+  const badge = document.getElementById('phase-badge');
+  document.getElementById('state-waiting').className = 'state-waiting' + (state.phase === 'waiting' ? ' show' : '');
+  document.getElementById('state-active').className = 'state-active' + (state.phase === 'active' ? ' show' : '');
+  document.getElementById('state-results').className = 'state-results' + (state.phase === 'results' ? ' show' : '');
+
+  if (state.phase === 'waiting') {
+    badge.className = 'phase-badge phase-waiting'; badge.textContent = 'Aguardando';
+    document.getElementById('status-dot').className = 'dot';
+    document.getElementById('status-text').textContent = 'Aguardando iniciar votação...';
+  } else if (state.phase === 'active') {
+    badge.className = 'phase-badge phase-active'; badge.textContent = 'Votação aberta';
+    document.getElementById('status-dot').className = 'dot active';
+    document.getElementById('status-text').textContent = 'Casais estão votando...';
+  } else if (state.phase === 'results') {
+    badge.className = 'phase-badge phase-results'; badge.textContent = 'Resultados';
+    document.getElementById('status-dot').className = 'dot';
+    document.getElementById('status-text').textContent = 'Resultados exibidos';
+  }
+
+  // Votes
+  const sitKey = `sit_${state.currentSit}`;
+  const votes = state.votes[sitKey] || {};
+  const counts = { fire: 0, silence: 0, mature: 0 };
+  Object.values(votes).forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+  const total = counts.fire + counts.silence + counts.mature || 1;
+  document.getElementById('count-fire').textContent = counts.fire;
+  document.getElementById('count-silence').textContent = counts.silence;
+  document.getElementById('count-mature').textContent = counts.mature;
+  document.getElementById('bar-fire').style.width = (counts.fire / total * 100) + '%';
+  document.getElementById('bar-silence').style.width = (counts.silence / total * 100) + '%';
+  document.getElementById('bar-mature').style.width = (counts.mature / total * 100) + '%';
+
+  // Couples list
+  const couples = Object.values(state.couples);
+  const cl = document.getElementById('couples-list');
+  document.getElementById('couple-count').textContent = couples.length + ' casal' + (couples.length !== 1 ? 'is' : '');
+  if (couples.length === 0) {
+    cl.innerHTML = '<div class="empty-state">Nenhum casal conectado ainda.<br>Compartilhe o QR Code!</div>';
+  } else {
+    cl.innerHTML = couples.map(c => {
+      const vote = (state.votes[sitKey] || {})[c.id];
+      const vLabel = vote === 'fire' ? '🔥' : vote === 'silence' ? '😶' : vote === 'mature' ? '❤️' : '';
+      return `<div class="couple-item">
+        <span class="couple-name">💑 ${c.name}</span>
+        <span class="couple-badge">${vLabel || 'aguardando'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Votes detail
+  const vdl = document.getElementById('votes-detail-list');
+  if (couples.length === 0) {
+    vdl.innerHTML = '<div class="empty-state">Nenhum voto ainda.</div>';
+  } else {
+    vdl.innerHTML = couples.map(c => {
+      const vote = (state.votes[sitKey] || {})[c.id];
+      const labels = { fire: '🔥 Reação da Carne', silence: '😶 Guardei pra Mim', mature: '❤️ Reação Madura' };
+      return `<div class="couple-item">
+        <span class="couple-name">${c.name}</span>
+        <span class="couple-badge">${vote ? labels[vote] : '—'}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+function startVoting() {
+  state.phase = 'active';
+  saveState(); render();
+}
+
+function showResults() {
+  state.phase = 'results';
+  saveState(); render();
+}
+
+function resetVotes() {
+  state.votes[`sit_${state.currentSit}`] = {};
+  state.phase = 'waiting';
+  saveState(); render();
+}
+
+function changeSit(dir) {
+  const next = state.currentSit + dir;
+  if (next < 0 || next >= situations.length) return;
+  state.currentSit = next;
+  state.phase = 'waiting';
+  saveState(); render();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-situacoes').style.display = tab === 'situacoes' ? '' : 'none';
+  document.getElementById('tab-votacoes').style.display = tab === 'votacoes' ? '' : 'none';
+  render();
+}
+
+// QR Code
+function setupQR() {
+  const url = window.location.href.replace('host.html', 'casais.html');
+  document.getElementById('qr-url-text').textContent = url;
+  new QRCode(document.getElementById('qrcode'), {
+    text: url,
+    width: 180, height: 180,
+    colorDark: '#6B1E2E', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function copyLink() {
+  const url = window.location.href.replace('host.html', 'casais.html');
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ Copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar link', 2000);
+  });
+}
+
+// Listen for couple joins and votes from other tab
+const bc = new BroadcastChannel('culto_casais');
+bc.onmessage = (e) => {
+  if (e.data && e.data.type === 'join') {
+    state.couples[e.data.id] = { id: e.data.id, name: e.data.name };
+    saveState(); render();
+  } else if (e.data && e.data.type === 'vote') {
+    const sitKey = `sit_${state.currentSit}`;
+    if (!state.votes[sitKey]) state.votes[sitKey] = {};
+    state.votes[sitKey][e.data.id] = e.data.vote;
+    saveState(); render();
+  }
+};
+
+// Poll localStorage for cross-tab updates
+setInterval(() => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    const s = JSON.parse(saved);
+    if (JSON.stringify(s.couples) !== JSON.stringify(state.couples) ||
+        JSON.stringify(s.votes) !== JSON.stringify(state.votes)) {
+      state = s;
+      render();
+    }
+  }
+}, 1000);
+
+loadState();
+setupQR();
+</script>
+</body>
+</html>
