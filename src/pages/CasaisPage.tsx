@@ -98,14 +98,6 @@ export default function CasaisPage() {
 
   const votes = appState.votes?.[sitKey] ?? {}
 
-  // Meus votos acumulados em todas as situações (para a tela de resultados)
-  const myCounts = { fire: 0, silence: 0, mature: 0 }
-  Object.values(appState.votes ?? {}).forEach(sitVotes => {
-    const v = sitVotes[myId]
-    if (v) myCounts[v]++
-  })
-  const myTotal = myCounts.fire + myCounts.silence + myCounts.mature || 1
-
   type Screen = 'login' | 'waiting' | 'voting' | 'voted' | 'results'
   let screen: Screen
   if (!myName) {
@@ -289,33 +281,6 @@ export default function CasaisPage() {
                     ) : (
                       <span className="text-xs text-muted italic">Não respondida</span>
                     )}
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Resumo percentual */}
-            <div className="bg-white border border-wine/15 rounded-2xl p-4 mb-4">
-              <p className="text-xs font-medium text-muted uppercase tracking-widest mb-4">
-                Perfil de respostas
-              </p>
-              {RESULT_ROWS.map(row => {
-                const pct = Math.round((myCounts[row.key] / myTotal) * 100)
-                return (
-                  <div key={row.key} className="flex items-center gap-3 mb-3 last:mb-0">
-                    <span className="text-xl flex-shrink-0">{row.emoji}</span>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-prose">{row.label}</span>
-                        <span className={`font-medium ${row.color}`}>{pct}%</span>
-                      </div>
-                      <div className="h-1.5 bg-wine-pale rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${row.bar}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
                   </div>
                 )
               })}

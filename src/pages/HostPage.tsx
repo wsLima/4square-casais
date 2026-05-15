@@ -31,13 +31,6 @@ export default function HostPage() {
   Object.values(votes).forEach(v => { counts[v]++ })
   const totalVotes = counts.fire + counts.silence + counts.mature
 
-  // Votos acumulados de todas as situações (para a tela de resultados)
-  const allCounts = { fire: 0, silence: 0, mature: 0 }
-  Object.values(state.votes).forEach(sitVotes => {
-    Object.values(sitVotes).forEach(v => { allCounts[v as VoteOption]++ })
-  })
-  const allTotal = allCounts.fire + allCounts.silence + allCounts.mature || 1
-
   const casaisUrl = `${window.location.protocol}//${window.location.host}/casais`
 
   function copyLink() {
@@ -217,22 +210,41 @@ export default function HostPage() {
             )}
 
             {state.phase === 'results' && (
-              <div>
-                <p className="text-xs text-muted text-center mb-3">
-                  Resultado geral — {allTotal} {allTotal === 1 ? 'voto' : 'votos'}
-                </p>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {VOTE_ROWS.map(row => (
-                    <div key={row.key} className={`rounded-xl p-3 text-center border-2 ${row.ring}`}>
-                      <span className="text-3xl block mb-1">{row.emoji}</span>
-                      <div className="text-xs text-muted font-medium">{row.label}</div>
-                      <div className={`font-display text-2xl mt-1 ${row.count}`}>
-                        {Math.round((allCounts[row.key] / allTotal) * 100)}%
-                      </div>
-                      <div className="text-xs text-muted mt-0.5">{allCounts[row.key]} votos</div>
+              <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-0.5">
+                {situations.map((sit, idx) => {
+                  const sk = `sit_${idx}`
+                  const sitVotes = state.votes[sk] ?? {}
+                  const sitC = { fire: 0, silence: 0, mature: 0 }
+                  Object.values(sitVotes).forEach(v => { sitC[v as VoteOption]++ })
+                  const sitTotal = sitC.fire + sitC.silence + sitC.mature
+                  if (sitTotal === 0) return null
+                  return (
+                    <div key={idx} className="bg-wine-pale rounded-xl p-3">
+                      <p className="text-xs font-semibold text-wine mb-2">
+                        Situação {idx + 1} — {sitTotal} {sitTotal === 1 ? 'voto' : 'votos'}
+                      </p>
+                      {VOTE_ROWS.map(row => {
+                        const pct = Math.round((sitC[row.key] / sitTotal) * 100)
+                        const emoji = sit.optionOverrides?.[row.key]?.emoji ?? row.emoji
+                        const name = sit.optionOverrides?.[row.key]?.name ?? row.label
+                        return (
+                          <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                            <span className="text-sm w-5 flex-shrink-0">{emoji}</span>
+                            <span className="text-xs text-prose w-24 flex-shrink-0 truncate">{name}</span>
+                            <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-medium w-8 text-right ${row.count}`}>{pct}%</span>
+                            <span className="text-xs text-muted w-4 text-right">{sitC[row.key]}</span>
+                          </div>
+                        )
+                      })}
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
                 <button
                   onClick={resetVotes}
                   className="w-full py-2.5 bg-wine-pale text-wine rounded-xl text-sm font-medium hover:bg-pink-100 transition-colors cursor-pointer"
