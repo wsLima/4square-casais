@@ -39,7 +39,6 @@ export const situations: Situation[] = [
   {
     title: 'Situação 6 — A mais temida',
     text: 'Seu cônjuge olha pra você com uma expressão séria e fala:\n"Precisamos conversar…"\n',
-    comment: '😂 Impressionante como essa frase aumenta a pressão, acelera o coração, tira a paz… e faz a pessoa revisar mentalmente todos os erros cometidos na semana inteira.',
     optionOverrides: {
       fire: { emoji: '🧊', name: 'Coração gelado' },
       silence: { emoji: '😰', name: 'Frio na barriga' },

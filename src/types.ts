@@ -9,7 +9,7 @@ export interface Couple {
 export interface Situation {
   title: string
   text: string
-  comment: string
+  comment?: string
   reactions?: {
     fire: string
     silence: string
