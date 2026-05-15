@@ -98,6 +98,22 @@ export default function CasaisPage() {
 
   const votes = appState.votes?.[sitKey] ?? {}
 
+  const sit6Idx = situations.length - 1
+  const sit6 = situations[sit6Idx]
+  const g1Counts = { fire: 0, silence: 0, mature: 0 }
+  for (let i = 0; i < sit6Idx; i++) {
+    const v = appState.votes?.[`sit_${i}`]?.[myId]
+    if (v) g1Counts[v]++
+  }
+  const g1Total = g1Counts.fire + g1Counts.silence + g1Counts.mature || 1
+  const g1HasVotes = g1Counts.fire + g1Counts.silence + g1Counts.mature > 0
+  const myVote6 = appState.votes?.[`sit_${sit6Idx}`]?.[myId]
+  const g2Rows = RESULT_ROWS.map(row => ({
+    ...row,
+    emoji: sit6.optionOverrides?.[row.key]?.emoji ?? row.emoji,
+    label: sit6.optionOverrides?.[row.key]?.name ?? row.label,
+  }))
+
   type Screen = 'login' | 'waiting' | 'voting' | 'voted' | 'results'
   let screen: Screen
   if (!myName) {
@@ -260,35 +276,62 @@ export default function CasaisPage() {
           <div className="animate-fade-in">
             <div className="text-center mb-5">
               <h2 className="font-display text-2xl text-wine">Seu Perfil 📊</h2>
-              <p className="text-xs text-muted mt-1">Suas respostas em todas as situações</p>
+              <p className="text-xs text-muted mt-1">Suas respostas consolidadas</p>
             </div>
 
-            {/* Lista por situação */}
-            <div className="bg-white border border-wine/15 rounded-2xl overflow-hidden mb-5">
-              {situations.map((sitObj, idx) => {
-                const sitK = `sit_${idx}`
-                const chosen = appState.votes?.[sitK]?.[myId] as VoteOption | undefined
-                const rows = RESULT_ROWS.map(row => ({
-                  ...row,
-                  emoji: sitObj.optionOverrides?.[row.key]?.emoji ?? row.emoji,
-                  label: sitObj.optionOverrides?.[row.key]?.name ?? row.label,
-                }))
-                const chosenRow = chosen ? rows.find(r => r.key === chosen) : null
-                return (
-                  <div key={idx} className="flex items-center gap-3 px-4 py-3 border-b border-wine/10 last:border-0">
-                    <span className="text-xs text-muted font-medium flex-shrink-0 w-20">Situação {idx + 1}</span>
-                    {chosenRow ? (
-                      <>
-                        <span className="text-base flex-shrink-0">{chosenRow.emoji}</span>
-                        <span className={`text-xs font-medium ${chosenRow.color}`}>{chosenRow.label}</span>
-                      </>
-                    ) : (
-                      <span className="text-xs text-muted italic">Não respondida</span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+            {/* Grupo 1: Situações 1–5 */}
+            {g1HasVotes && (
+              <div className="bg-white border border-wine/15 rounded-2xl p-4 mb-4">
+                <p className="text-xs font-medium text-muted uppercase tracking-widest mb-4">
+                  Situações 1 a {sit6Idx}
+                </p>
+                {RESULT_ROWS.map(row => {
+                  const pct = Math.round((g1Counts[row.key] / g1Total) * 100)
+                  return (
+                    <div key={row.key} className="flex items-center gap-3 mb-3 last:mb-0">
+                      <span className="text-xl flex-shrink-0">{row.emoji}</span>
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-medium text-prose">{row.label}</span>
+                          <span className={`font-medium ${row.color}`}>{pct}%</span>
+                        </div>
+                        <div className="h-1.5 bg-wine-pale rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-700 ${row.bar}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Grupo 2: Situação "Precisamos conversar…" */}
+            {myVote6 && (
+              <div className="bg-white border border-wine/15 rounded-2xl p-4 mb-4">
+                <p className="text-xs font-medium text-muted uppercase tracking-widest mb-4">
+                  Precisamos conversar…
+                </p>
+                {g2Rows.map(row => {
+                  const isChosen = myVote6 === row.key
+                  return (
+                    <div key={row.key} className={`flex items-center gap-3 mb-3 last:mb-0 ${isChosen ? '' : 'opacity-35'}`}>
+                      <span className="text-xl flex-shrink-0">{row.emoji}</span>
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-medium text-prose">{row.label}</span>
+                          <span className={`font-medium ${isChosen ? row.color : 'text-muted'}`}>
+                            {isChosen ? '✓ sua escolha' : '—'}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-wine-pale rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-700 ${row.bar}`} style={{ width: isChosen ? '100%' : '0%' }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             <div className="text-center text-muted text-sm py-3 bg-wine-pale rounded-xl animate-pulse">
               Aguardando próxima situação…

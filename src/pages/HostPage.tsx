@@ -31,6 +31,23 @@ export default function HostPage() {
   Object.values(votes).forEach(v => { counts[v]++ })
   const totalVotes = counts.fire + counts.silence + counts.mature
 
+  const sit6Idx = situations.length - 1
+  const sit6 = situations[sit6Idx]
+  const g1Counts = { fire: 0, silence: 0, mature: 0 }
+  for (let i = 0; i < sit6Idx; i++) {
+    Object.values(state.votes[`sit_${i}`] ?? {}).forEach(v => { g1Counts[v as VoteOption]++ })
+  }
+  const g1Total = g1Counts.fire + g1Counts.silence + g1Counts.mature || 1
+  const g2Counts = { fire: 0, silence: 0, mature: 0 }
+  Object.values(state.votes[`sit_${sit6Idx}`] ?? {}).forEach(v => { g2Counts[v as VoteOption]++ })
+  const g2Total = g2Counts.fire + g2Counts.silence + g2Counts.mature || 1
+  const g2HasVotes = g2Counts.fire + g2Counts.silence + g2Counts.mature > 0
+  const g2Rows = VOTE_ROWS.map(row => ({
+    ...row,
+    emoji: sit6.optionOverrides?.[row.key]?.emoji ?? row.emoji,
+    label: sit6.optionOverrides?.[row.key]?.name ?? row.label,
+  }))
+
   const casaisUrl = `${window.location.protocol}//${window.location.host}/casais`
 
   function copyLink() {
@@ -210,44 +227,57 @@ export default function HostPage() {
             )}
 
             {state.phase === 'results' && (
-              <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-0.5">
-                {situations.map((sit, idx) => {
-                  const sk = `sit_${idx}`
-                  const sitVotes = state.votes[sk] ?? {}
-                  const sitC = { fire: 0, silence: 0, mature: 0 }
-                  Object.values(sitVotes).forEach(v => { sitC[v as VoteOption]++ })
-                  const sitTotal = sitC.fire + sitC.silence + sitC.mature
-                  if (sitTotal === 0) return null
-                  const rows = VOTE_ROWS.map(row => ({
-                    ...row,
-                    emoji: sit.optionOverrides?.[row.key]?.emoji ?? row.emoji,
-                    label: sit.optionOverrides?.[row.key]?.name ?? row.label,
-                  }))
-                  return (
-                    <div key={idx} className="bg-wine-pale rounded-xl p-3">
-                      <p className="text-xs font-semibold text-wine mb-2">
-                        Situação {idx + 1} — {sitTotal} {sitTotal === 1 ? 'voto' : 'votos'}
-                      </p>
-                      {rows.map(row => {
-                        const pct = Math.round((sitC[row.key] / sitTotal) * 100)
-                        return (
-                          <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
-                            <span className="text-sm w-5 flex-shrink-0">{row.emoji}</span>
-                            <span className="text-xs text-prose w-24 flex-shrink-0 truncate">{row.label}</span>
-                            <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <span className={`text-xs font-medium w-8 text-right ${row.count}`}>{pct}%</span>
-                            <span className="text-xs text-muted w-4 text-right">{sitC[row.key]}</span>
+              <div className="space-y-3">
+                {/* Grupo 1: Situações 1–5 */}
+                <div className="bg-wine-pale rounded-xl p-3">
+                  <p className="text-xs font-semibold text-wine mb-3">
+                    Situações 1 a {sit6Idx}
+                    <span className="ml-1 font-normal text-muted">
+                      ({g1Counts.fire + g1Counts.silence + g1Counts.mature} votos)
+                    </span>
+                  </p>
+                  {VOTE_ROWS.map(row => {
+                    const pct = Math.round((g1Counts[row.key] / g1Total) * 100)
+                    return (
+                      <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                        <span className="text-sm w-5 flex-shrink-0">{row.emoji}</span>
+                        <span className="text-xs text-prose w-24 flex-shrink-0 truncate">{row.label}</span>
+                        <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-500 ${row.bar}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`text-xs font-medium w-8 text-right ${row.count}`}>{pct}%</span>
+                        <span className="text-xs text-muted w-4 text-right">{g1Counts[row.key]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Grupo 2: Precisamos conversar… */}
+                {g2HasVotes && (
+                  <div className="bg-wine-pale rounded-xl p-3">
+                    <p className="text-xs font-semibold text-wine mb-3">
+                      Precisamos conversar…
+                      <span className="ml-1 font-normal text-muted">
+                        ({g2Counts.fire + g2Counts.silence + g2Counts.mature} votos)
+                      </span>
+                    </p>
+                    {g2Rows.map(row => {
+                      const pct = Math.round((g2Counts[row.key] / g2Total) * 100)
+                      return (
+                        <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                          <span className="text-sm w-5 flex-shrink-0">{row.emoji}</span>
+                          <span className="text-xs text-prose w-24 flex-shrink-0 truncate">{row.label}</span>
+                          <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${row.bar}`} style={{ width: `${pct}%` }} />
                           </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
+                          <span className={`text-xs font-medium w-8 text-right ${row.count}`}>{pct}%</span>
+                          <span className="text-xs text-muted w-4 text-right">{g2Counts[row.key]}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
                 <button
                   onClick={resetVotes}
                   className="w-full py-2.5 bg-wine-pale text-wine rounded-xl text-sm font-medium hover:bg-pink-100 transition-colors cursor-pointer"
