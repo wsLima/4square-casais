@@ -60,6 +60,14 @@ export default function CasaisPage() {
     setSelectedOption(null)
   }, [appState.currentSit])
 
+  useEffect(() => {
+    if (myName && !appState.couples[myId]) {
+      setMyName('')
+      setInputValue('')
+      setSelectedOption(null)
+    }
+  }, [appState.couples, myId, myName])
+
   function handleEnter() {
     const name = inputValue.trim()
     if (!name) {

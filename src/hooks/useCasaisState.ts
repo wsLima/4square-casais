@@ -42,6 +42,16 @@ export function useCasaisState(myId: string) {
           }))
         },
       )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'couples' },
+        (payload) => {
+          const row = payload.old as CoupleRow
+          setAppState(prev => {
+            const couples = { ...prev.couples }
+            delete couples[row.id]
+            return { ...prev, couples }
+          })
+        },
+      )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' },
         () => {
           supabase.from('votes').select('*').then(({ data }) => {
