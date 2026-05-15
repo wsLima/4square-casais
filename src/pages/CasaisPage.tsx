@@ -200,23 +200,28 @@ export default function CasaisPage() {
               <p className="font-display text-xl text-prose leading-snug whitespace-pre-line">{sit.text}</p>
             </div>
             <div className="flex flex-col gap-3">
-              {VOTE_OPTIONS.map(opt => (
-                <button
-                  key={opt.key}
-                  onClick={() => setSelectedOption(opt.key)}
-                  className={`flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                    selectedOption === opt.key ? opt.selected : opt.idle
-                  }`}
-                >
-                  <span className="text-3xl flex-shrink-0">{opt.emoji}</span>
-                  <div>
-                    <div className={`font-medium text-sm ${opt.nameColor}`}>{opt.name}</div>
-                    <div className="text-xs text-muted mt-0.5 leading-snug whitespace-pre-line">
-                      {sit.reactions ? sit.reactions[opt.key] : opt.desc}
+              {VOTE_OPTIONS.map(opt => {
+                const override = sit.optionOverrides?.[opt.key]
+                const emoji = override?.emoji ?? opt.emoji
+                const name = override?.name ?? opt.name
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => setSelectedOption(opt.key)}
+                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                      selectedOption === opt.key ? opt.selected : opt.idle
+                    }`}
+                  >
+                    <span className="text-3xl flex-shrink-0">{emoji}</span>
+                    <div>
+                      <div className={`font-medium text-sm ${opt.nameColor}`}>{name}</div>
+                      <div className="text-xs text-muted mt-0.5 leading-snug whitespace-pre-line">
+                        {sit.reactions ? sit.reactions[opt.key] : opt.desc}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                )
+              })}
             </div>
             <button
               onClick={handleVote}
@@ -243,7 +248,12 @@ export default function CasaisPage() {
             {myVote && (
               <div className="mt-6 max-w-xs mx-auto bg-white border border-wine/15 rounded-2xl px-5 py-4 text-sm text-prose leading-relaxed">
                 Você escolheu:<br />
-                <strong className="text-wine">{VOTE_LABELS[myVote]}</strong>
+                <strong className="text-wine">
+                  {(() => {
+                    const override = sit.optionOverrides?.[myVote]
+                    return override ? `${override.emoji} ${override.name}` : VOTE_LABELS[myVote]
+                  })()}
+                </strong>
               </div>
             )}
             <div className="mt-4 text-sm text-muted font-medium">
@@ -263,17 +273,18 @@ export default function CasaisPage() {
 
             {/* Lista por situação */}
             <div className="bg-white border border-wine/15 rounded-2xl overflow-hidden mb-5">
-              {situations.map((_sit, idx) => {
+              {situations.map((sitObj, idx) => {
                 const sitK = `sit_${idx}`
                 const chosen = appState.votes?.[sitK]?.[myId] as VoteOption | undefined
                 const opt = chosen ? RESULT_ROWS.find(r => r.key === chosen) : null
+                const override = chosen ? sitObj.optionOverrides?.[chosen] : null
                 return (
                   <div key={idx} className="flex items-center gap-3 px-4 py-3 border-b border-wine/10 last:border-0">
                     <span className="text-xs text-muted font-medium flex-shrink-0 w-20">Situação {idx + 1}</span>
                     {opt ? (
                       <>
-                        <span className="text-base flex-shrink-0">{opt.emoji}</span>
-                        <span className={`text-xs font-medium ${opt.color}`}>{opt.label}</span>
+                        <span className="text-base flex-shrink-0">{override?.emoji ?? opt.emoji}</span>
+                        <span className={`text-xs font-medium ${opt.color}`}>{override?.name ?? opt.label}</span>
                       </>
                     ) : (
                       <span className="text-xs text-muted italic">Não respondida</span>

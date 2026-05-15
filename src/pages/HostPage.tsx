@@ -219,7 +219,7 @@ export default function HostPage() {
             {state.phase === 'results' && (
               <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-0.5">
                 {/* Breakdown por situação */}
-                {situations.map((_sit, idx) => {
+                {situations.map((sit, idx) => {
                   const sk = `sit_${idx}`
                   const sitVotes = state.votes[sk] ?? {}
                   const sitC = { fire: 0, silence: 0, mature: 0 }
@@ -233,9 +233,10 @@ export default function HostPage() {
                       </p>
                       {VOTE_ROWS.map(row => {
                         const pct = Math.round((sitC[row.key] / sitTotal) * 100)
+                        const emoji = sit.optionOverrides?.[row.key]?.emoji ?? row.emoji
                         return (
                           <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
-                            <span className="text-sm w-5 flex-shrink-0">{row.emoji}</span>
+                            <span className="text-sm w-5 flex-shrink-0">{emoji}</span>
                             <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${row.bar}`}

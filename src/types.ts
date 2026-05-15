@@ -15,6 +15,7 @@ export interface Situation {
     silence: string
     mature: string
   }
+  optionOverrides?: Partial<Record<VoteOption, { emoji: string; name: string }>>
 }
 
 export interface AppState {

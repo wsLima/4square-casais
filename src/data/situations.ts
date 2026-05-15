@@ -38,7 +38,17 @@ export const situations: Situation[] = [
   },
   {
     title: 'Situação 6 — A mais temida',
-    text: 'Seu cônjuge olha para você e fala:\n\n"Precisamos conversar…"',
+    text: 'Seu cônjuge olha pra você com uma expressão séria e fala:\n\n"Precisamos conversar…"\n\n(Pausa dramática para observar as reações 😅)',
     comment: '😂 Impressionante como essa frase aumenta a pressão, acelera o coração, tira a paz… e faz a pessoa revisar mentalmente todos os erros cometidos na semana inteira.',
+    optionOverrides: {
+      fire: { emoji: '🧊', name: 'Coração gelado' },
+      silence: { emoji: '😰', name: 'Frio na barriga' },
+      mature: { emoji: '🔥', name: 'Calor no corpo todo' },
+    },
+    reactions: {
+      fire: 'A pessoa tenta manter a postura de calma e controle…\n\nmas por dentro já começou a revisar mentalmente todos os acontecimentos da semana.',
+      silence: 'Bate aquele nervosismo imediato.\n\nA mente começa a criar teorias,\n\nlembrar conversas antigas,\n\ne procurar onde possivelmente errou.',
+      mature: 'A pressão sobe na hora.\n\nA pessoa já entra em modo de alerta máximo,\n\nfica inquieta,\n\ne sente o corpo inteiro reagindo ao suspense da conversa.',
+    },
   },
 ]
