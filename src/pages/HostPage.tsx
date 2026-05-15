@@ -19,9 +19,17 @@ const VOTE_ROWS = [
 ]
 
 export default function HostPage() {
-  const { state, startDynamic, startVoting, showResults, resetVotes, changeSituation } = useHostState()
+  const { state, loading, startDynamic, startVoting, showResults, resetVotes, changeSituation } = useHostState()
   const [tab, setTab] = useState<Tab>('situacoes')
   const [copied, setCopied] = useState(false)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="text-muted text-sm animate-pulse">Conectando ao Supabase…</p>
+      </div>
+    )
+  }
 
   const sit = situations[state.currentSit]
   const sitKey = `sit_${state.currentSit}`
@@ -51,6 +59,13 @@ export default function HostPage() {
       {/* ── LOBBY (antes de iniciar) ── */}
       {!state.started && (
         <div className="max-w-lg mx-auto animate-fade-in">
+          {window.location.hostname === 'localhost' && (
+            <div className="mb-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+              ⚠️ Você está acessando via <strong>localhost</strong>. O QR Code não vai funcionar em outros dispositivos.
+              Acesse esta página pelo <strong>IP da rede</strong> que o Vite exibe no terminal ao iniciar
+              (ex: <code>http://192.168.x.x:5173/host</code>).
+            </div>
+          )}
           <div className="bg-white border border-wine/15 rounded-2xl p-8 mb-6">
             <p className="text-center text-prose font-medium mb-6">
               Escaneie e entre com o nome do casal para participar.

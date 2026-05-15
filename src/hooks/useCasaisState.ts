@@ -1,95 +1,78 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { AppState, VoteOption } from '../types'
-
-const STORAGE_KEY = 'culto_casais_v1'
-
-const defaultState: AppState = {
-  started: false,
-  currentSit: 0,
-  phase: 'waiting',
-  couples: {},
-  votes: {},
-}
-
-function load(): AppState {
-  try {
-    const s = localStorage.getItem(STORAGE_KEY)
-    if (!s) return defaultState
-    return { ...defaultState, ...(JSON.parse(s) as Partial<AppState>) }
-  } catch {
-    return defaultState
-  }
-}
+import { supabase } from '../lib/supabase'
+import { buildVotes, buildState } from '../lib/stateUtils'
+import type { SessionRow, CoupleRow, VoteRow } from '../lib/stateUtils'
+import type { AppState, Phase, VoteOption } from '../types'
 
 export function useCasaisState(myId: string) {
-  const [appState, setAppState] = useState<AppState>(load)
+  const [appState, setAppState] = useState<AppState>({
+    started: false,
+    currentSit: 0,
+    phase: 'waiting',
+    couples: {},
+    votes: {},
+  })
+  const [loading, setLoading] = useState(true)
   const appStateRef = useRef(appState)
   appStateRef.current = appState
 
   useEffect(() => {
-    const id = setInterval(() => {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (!saved) return
-      const s = JSON.parse(saved) as AppState
-      if (JSON.stringify(s) !== JSON.stringify(appStateRef.current)) {
-        appStateRef.current = s
-        setAppState(s)
-      }
-    }, 800)
-    return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
-    const bc = new BroadcastChannel('culto_casais')
-    bc.onmessage = (e: MessageEvent) => {
-      if (e.data && !e.data.type) {
-        const s = e.data as AppState
-        appStateRef.current = s
-        setAppState(s)
-      }
+    async function init() {
+      const [{ data: session }, { data: couples }, { data: votes }] = await Promise.all([
+        supabase.from('sessions').select('*').eq('id', 'main').maybeSingle(),
+        supabase.from('couples').select('*'),
+        supabase.from('votes').select('*'),
+      ])
+      setAppState(buildState(session as SessionRow | null, (couples ?? []) as CoupleRow[], (votes ?? []) as VoteRow[]))
+      setLoading(false)
     }
-    return () => bc.close()
+
+    void init()
+
+    const channel = supabase
+      .channel('casais-channel')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: 'id=eq.main' },
+        (payload) => {
+          const row = payload.new as SessionRow
+          setAppState(prev => ({
+            ...prev,
+            started: row.started,
+            currentSit: row.current_sit,
+            phase: row.phase as Phase,
+          }))
+        },
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' },
+        () => {
+          supabase.from('votes').select('*').then(({ data }) => {
+            if (data) setAppState(prev => ({ ...prev, votes: buildVotes(data as VoteRow[]) }))
+          })
+        },
+      )
+      .subscribe()
+
+    return () => { void supabase.removeChannel(channel) }
   }, [])
 
-  const joinDynamic = useCallback(
-    (name: string) => {
-      const bc = new BroadcastChannel('culto_casais')
-      bc.postMessage({ type: 'join', id: myId, name })
-      bc.close()
+  const joinDynamic = useCallback(async (name: string) => {
+    setAppState(prev => ({
+      ...prev,
+      couples: { ...prev.couples, [myId]: { id: myId, name } },
+    }))
+    await supabase.from('couples').upsert({ id: myId, name }, { onConflict: 'id' })
+  }, [myId])
 
-      const s = appStateRef.current
-      const next: AppState = {
-        ...s,
-        couples: { ...s.couples, [myId]: { id: myId, name } },
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      appStateRef.current = next
-      setAppState(next)
-    },
-    [myId],
-  )
+  const submitVote = useCallback(async (vote: VoteOption) => {
+    const sitKey = `sit_${appStateRef.current.currentSit}`
+    setAppState(prev => ({
+      ...prev,
+      votes: { ...prev.votes, [sitKey]: { ...(prev.votes[sitKey] ?? {}), [myId]: vote } },
+    }))
+    await supabase.from('votes').upsert(
+      { couple_id: myId, sit_key: sitKey, vote },
+      { onConflict: 'couple_id,sit_key' },
+    )
+  }, [myId])
 
-  const submitVote = useCallback(
-    (vote: VoteOption) => {
-      const s = appStateRef.current
-      const sitKey = `sit_${s.currentSit}`
-      const next: AppState = {
-        ...s,
-        votes: {
-          ...s.votes,
-          [sitKey]: { ...(s.votes[sitKey] ?? {}), [myId]: vote },
-        },
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      appStateRef.current = next
-      setAppState(next)
-
-      const bc = new BroadcastChannel('culto_casais')
-      bc.postMessage({ type: 'vote', id: myId, vote, sitKey })
-      bc.close()
-    },
-    [myId],
-  )
-
-  return { appState, joinDynamic, submitVote }
+  return { appState, loading, joinDynamic, submitVote }
 }

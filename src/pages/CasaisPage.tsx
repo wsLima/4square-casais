@@ -49,7 +49,7 @@ const myIdRef = { current: `couple_${Math.random().toString(36).slice(2, 10)}` }
 
 export default function CasaisPage() {
   const myId = myIdRef.current
-  const { appState, joinDynamic, submitVote } = useCasaisState(myId)
+  const { appState, loading, joinDynamic, submitVote } = useCasaisState(myId)
 
   const [myName, setMyName] = useState('')
   const [inputValue, setInputValue] = useState('')
@@ -73,6 +73,14 @@ export default function CasaisPage() {
   function handleVote() {
     if (!selectedOption) return
     submitVote(selectedOption)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="text-muted text-sm animate-pulse">Conectando…</p>
+      </div>
+    )
   }
 
   const sitKey = `sit_${appState.currentSit}`
