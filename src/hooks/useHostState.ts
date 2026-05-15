@@ -79,6 +79,15 @@ export function useHostState() {
     await supabase.from('sessions').update(updates).eq('id', 'main')
   }, [])
 
+  const resetSession = useCallback(async () => {
+    await Promise.all([
+      supabase.from('votes').delete().in('sit_key', ['sit_0','sit_1','sit_2','sit_3','sit_4','sit_5']),
+      supabase.from('couples').delete().neq('id', ''),
+      supabase.from('sessions').update({ started: false, current_sit: 0, phase: 'waiting' }).eq('id', 'main'),
+    ])
+    setState({ started: false, currentSit: 0, phase: 'waiting', couples: {}, votes: {} })
+  }, [])
+
   const startDynamic = useCallback(() => updateSession({ started: true }), [updateSession])
   const startVoting = useCallback(() => updateSession({ phase: 'active' }), [updateSession])
   const showResults = useCallback(() => updateSession({ phase: 'results' }), [updateSession])
@@ -96,5 +105,5 @@ export function useHostState() {
     await updateSession({ current_sit: next, phase: 'waiting' })
   }, [updateSession])
 
-  return { state, loading, startDynamic, startVoting, showResults, resetVotes, changeSituation }
+  return { state, loading, resetSession, startDynamic, startVoting, showResults, resetVotes, changeSituation }
 }

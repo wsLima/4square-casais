@@ -233,6 +233,10 @@ export default function CasaisPage() {
                 <strong className="text-wine">{VOTE_LABELS[myVote]}</strong>
               </div>
             )}
+            <div className="mt-4 text-sm text-muted font-medium">
+              {Object.keys(votes).length} de {Object.keys(appState.couples).length}{' '}
+              {Object.keys(appState.couples).length === 1 ? 'casal respondeu' : 'casais responderam'}
+            </div>
           </div>
         )}
 

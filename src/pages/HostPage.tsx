@@ -4,14 +4,6 @@ import { useHostState } from '../hooks/useHostState'
 import { situations } from '../data/situations'
 import type { VoteOption } from '../types'
 
-type Tab = 'situacoes' | 'votacoes'
-
-const VOTE_LABELS: Record<VoteOption, string> = {
-  fire: '🔥 Reação da Carne',
-  silence: '😶 Guardei pra Mim',
-  mature: '❤️ Reação Madura',
-}
-
 const VOTE_ROWS = [
   { key: 'fire' as VoteOption, emoji: '🔥', label: 'Da Carne', ring: 'bg-fire/10 border-fire/30', count: 'text-fire', bar: 'bg-fire' },
   { key: 'silence' as VoteOption, emoji: '😶', label: 'Guardei pra mim', ring: 'bg-silence/10 border-silence/30', count: 'text-silence', bar: 'bg-silence' },
@@ -19,8 +11,7 @@ const VOTE_ROWS = [
 ]
 
 export default function HostPage() {
-  const { state, loading, startDynamic, startVoting, showResults, resetVotes, changeSituation } = useHostState()
-  const [tab, setTab] = useState<Tab>('situacoes')
+  const { state, loading, resetSession, startDynamic, startVoting, showResults, resetVotes, changeSituation } = useHostState()
   const [copied, setCopied] = useState(false)
 
   if (loading) {
@@ -38,7 +29,8 @@ export default function HostPage() {
 
   const counts = { fire: 0, silence: 0, mature: 0 }
   Object.values(votes).forEach(v => { counts[v]++ })
-  const total = counts.fire + counts.silence + counts.mature || 1
+  const totalVotes = counts.fire + counts.silence + counts.mature
+  const total = totalVotes || 1
 
   const casaisUrl = `${window.location.protocol}//${window.location.host}/casais`
 
@@ -113,9 +105,15 @@ export default function HostPage() {
 
           <button
             onClick={startDynamic}
-            className="w-full py-4 bg-wine text-white rounded-2xl font-medium text-lg hover:bg-wine-light transition-colors cursor-pointer"
+            className="w-full py-4 bg-wine text-white rounded-2xl font-medium text-lg hover:bg-wine-light transition-colors cursor-pointer mb-3"
           >
             Iniciar Dinâmica →
+          </button>
+          <button
+            onClick={resetSession}
+            className="w-full py-3 bg-white border border-wine/20 text-wine rounded-2xl font-medium text-sm hover:bg-wine-pale transition-colors cursor-pointer"
+          >
+            🔄 Reiniciar Sessão
           </button>
         </div>
       )}
@@ -144,140 +142,101 @@ export default function HostPage() {
               </span>
             </div>
 
-            <div className="flex gap-1 bg-wine-pale p-1 rounded-xl mb-5">
-              {(['situacoes', 'votacoes'] as Tab[]).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`flex-1 py-2 rounded-lg text-sm transition-all cursor-pointer ${
-                    tab === t ? 'bg-white text-wine font-medium shadow-sm' : 'text-muted hover:text-wine'
-                  }`}
-                >
-                  {t === 'situacoes' ? 'Situações' : 'Votações'}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-5">
+              <button
+                onClick={() => changeSituation(-1)}
+                disabled={state.currentSit === 0}
+                className="w-10 h-10 rounded-full bg-wine-pale text-wine flex items-center justify-center disabled:opacity-30 hover:bg-pink-100 transition-colors cursor-pointer"
+              >
+                ←
+              </button>
+              <span className="text-sm text-muted font-medium">
+                Situação {state.currentSit + 1} de {situations.length}
+              </span>
+              <button
+                onClick={() => changeSituation(1)}
+                disabled={state.currentSit === situations.length - 1}
+                className="w-10 h-10 rounded-full bg-wine-pale text-wine flex items-center justify-center disabled:opacity-30 hover:bg-pink-100 transition-colors cursor-pointer"
+              >
+                →
+              </button>
             </div>
 
-            {tab === 'situacoes' && (
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <button
-                    onClick={() => changeSituation(-1)}
-                    disabled={state.currentSit === 0}
-                    className="w-10 h-10 rounded-full bg-wine-pale text-wine flex items-center justify-center disabled:opacity-30 hover:bg-pink-100 transition-colors cursor-pointer"
-                  >
-                    ←
-                  </button>
-                  <span className="text-sm text-muted font-medium">
-                    Situação {state.currentSit + 1} de {situations.length}
-                  </span>
-                  <button
-                    onClick={() => changeSituation(1)}
-                    disabled={state.currentSit === situations.length - 1}
-                    className="w-10 h-10 rounded-full bg-wine-pale text-wine flex items-center justify-center disabled:opacity-30 hover:bg-pink-100 transition-colors cursor-pointer"
-                  >
-                    →
-                  </button>
-                </div>
+            <div className="bg-wine-pale rounded-xl p-5 mb-4 min-h-[100px]">
+              <span
+                className={`inline-block text-xs px-3 py-1 rounded-full font-medium mb-3 ${
+                  state.phase === 'waiting'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : state.phase === 'active'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-indigo-100 text-indigo-800'
+                }`}
+              >
+                {state.phase === 'waiting'
+                  ? 'Aguardando'
+                  : state.phase === 'active'
+                    ? 'Votação aberta'
+                    : 'Resultados'}
+              </span>
+              <h3 className="font-display text-lg text-wine mb-2">{sit.title}</h3>
+              <p className="text-sm leading-relaxed whitespace-pre-line text-prose">{sit.text}</p>
+            </div>
 
-                <div className="bg-wine-pale rounded-xl p-5 mb-4 min-h-[100px]">
-                  <span
-                    className={`inline-block text-xs px-3 py-1 rounded-full font-medium mb-3 ${
-                      state.phase === 'waiting'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : state.phase === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-indigo-100 text-indigo-800'
-                    }`}
-                  >
-                    {state.phase === 'waiting'
-                      ? 'Aguardando'
-                      : state.phase === 'active'
-                        ? 'Votação aberta'
-                        : 'Resultados'}
-                  </span>
-                  <h3 className="font-display text-lg text-wine mb-2">{sit.title}</h3>
-                  <p className="text-sm leading-relaxed whitespace-pre-line text-prose">{sit.text}</p>
-                </div>
-
-                {state.phase === 'results' && sit.comment && (
-                  <div
-                    className="bg-white border border-wine/15 rounded-r-xl p-4 text-sm leading-relaxed text-prose italic mb-4 whitespace-pre-line"
-                    style={{ borderLeft: '3px solid #C9933A' }}
-                  >
-                    {sit.comment}
-                  </div>
-                )}
-
-                {state.phase === 'waiting' && (
-                  <button
-                    onClick={startVoting}
-                    className="w-full mt-2 py-3.5 bg-wine text-white rounded-xl font-medium hover:bg-wine-light transition-colors cursor-pointer"
-                  >
-                    ▶ Iniciar Votação
-                  </button>
-                )}
-
-                {state.phase === 'active' && (
-                  <button
-                    onClick={showResults}
-                    className="w-full mt-2 py-3.5 bg-silence text-white rounded-xl font-medium hover:opacity-90 transition-opacity cursor-pointer"
-                  >
-                    📊 Encerrar e Ver Resultados
-                  </button>
-                )}
-
-                {state.phase === 'results' && (
-                  <div>
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      {VOTE_ROWS.map(row => (
-                        <div key={row.key} className={`rounded-xl p-3 text-center border-2 ${row.ring}`}>
-                          <span className="text-3xl block mb-1">{row.emoji}</span>
-                          <div className="text-xs text-muted font-medium">{row.label}</div>
-                          <div className={`font-display text-2xl mt-1 ${row.count}`}>{counts[row.key]}</div>
-                          <div className="h-1.5 bg-wine/10 rounded-full mt-2 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
-                              style={{ width: `${(counts[row.key] / total) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={resetVotes}
-                      className="w-full py-2.5 bg-wine-pale text-wine rounded-xl text-sm font-medium hover:bg-pink-100 transition-colors cursor-pointer"
-                    >
-                      🔄 Nova rodada (limpar votos)
-                    </button>
-                  </div>
-                )}
+            {state.phase === 'results' && sit.comment && (
+              <div
+                className="bg-white border border-wine/15 rounded-r-xl p-4 text-sm leading-relaxed text-prose italic mb-4 whitespace-pre-line"
+                style={{ borderLeft: '3px solid #C9933A' }}
+              >
+                {sit.comment}
               </div>
             )}
 
-            {tab === 'votacoes' && (
+            {state.phase === 'waiting' && (
+              <button
+                onClick={startVoting}
+                className="w-full mt-2 py-3.5 bg-wine text-white rounded-xl font-medium hover:bg-wine-light transition-colors cursor-pointer"
+              >
+                ▶ Iniciar Votação
+              </button>
+            )}
+
+            {state.phase === 'active' && (
               <div>
-                <p className="text-sm text-muted mb-4">Respostas individuais dos casais na situação atual.</p>
-                {couples.length === 0 ? (
-                  <div className="text-center text-muted text-sm py-8">Nenhum voto ainda.</div>
-                ) : (
-                  <div className="border border-wine/15 rounded-xl overflow-hidden">
-                    {couples.map(c => {
-                      const vote = votes[c.id]
-                      return (
+                <p className="text-center text-sm text-muted mb-3">
+                  {totalVotes} de {couples.length} {couples.length === 1 ? 'casal respondeu' : 'casais responderam'}
+                </p>
+                <button
+                  onClick={showResults}
+                  className="w-full py-3.5 bg-silence text-white rounded-xl font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  📊 Encerrar e Ver Resultados
+                </button>
+              </div>
+            )}
+
+            {state.phase === 'results' && (
+              <div>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {VOTE_ROWS.map(row => (
+                    <div key={row.key} className={`rounded-xl p-3 text-center border-2 ${row.ring}`}>
+                      <span className="text-3xl block mb-1">{row.emoji}</span>
+                      <div className="text-xs text-muted font-medium">{row.label}</div>
+                      <div className={`font-display text-2xl mt-1 ${row.count}`}>{counts[row.key]}</div>
+                      <div className="h-1.5 bg-wine/10 rounded-full mt-2 overflow-hidden">
                         <div
-                          key={c.id}
-                          className="flex items-center justify-between px-4 py-3 border-b border-wine/10 last:border-0 hover:bg-wine-pale/50 transition-colors"
-                        >
-                          <span className="font-medium text-sm text-prose">{c.name}</span>
-                          <span className="text-xs bg-wine-pale text-wine px-2 py-1 rounded-full">
-                            {vote ? VOTE_LABELS[vote] : '—'}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                          className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
+                          style={{ width: `${(counts[row.key] / total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={resetVotes}
+                  className="w-full py-2.5 bg-wine-pale text-wine rounded-xl text-sm font-medium hover:bg-pink-100 transition-colors cursor-pointer"
+                >
+                  🔄 Nova rodada (limpar votos)
+                </button>
               </div>
             )}
           </div>
@@ -304,30 +263,28 @@ export default function HostPage() {
 
             <div className="bg-white border border-wine/15 rounded-2xl p-7">
               <h2 className="font-display text-xl text-wine mb-4">Casais Conectados</h2>
-              <div className="max-h-72 overflow-y-auto border border-wine/15 rounded-xl">
+              <div className="max-h-64 overflow-y-auto border border-wine/15 rounded-xl mb-4">
                 {couples.length === 0 ? (
                   <div className="text-center text-muted text-sm py-8 px-4 leading-loose">
                     Nenhum casal conectado ainda.<br />Compartilhe o QR Code!
                   </div>
                 ) : (
-                  couples.map(c => {
-                    const vote = votes[c.id]
-                    const emoji =
-                      vote === 'fire' ? '🔥' : vote === 'silence' ? '😶' : vote === 'mature' ? '❤️' : ''
-                    return (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between px-4 py-3 border-b border-wine/10 last:border-0 hover:bg-wine-pale/50 transition-colors"
-                      >
-                        <span className="font-medium text-sm text-prose">💑 {c.name}</span>
-                        <span className="text-xs bg-wine-pale text-wine px-2 py-1 rounded-full">
-                          {emoji || 'aguardando'}
-                        </span>
-                      </div>
-                    )
-                  })
+                  couples.map(c => (
+                    <div
+                      key={c.id}
+                      className="flex items-center px-4 py-3 border-b border-wine/10 last:border-0 hover:bg-wine-pale/50 transition-colors"
+                    >
+                      <span className="font-medium text-sm text-prose">💑 {c.name}</span>
+                    </div>
+                  ))
                 )}
               </div>
+              <button
+                onClick={resetSession}
+                className="w-full py-2.5 bg-white border border-wine/20 text-wine rounded-xl text-sm font-medium hover:bg-wine-pale transition-colors cursor-pointer"
+              >
+                🔄 Reiniciar Sessão
+              </button>
             </div>
           </div>
         </div>
