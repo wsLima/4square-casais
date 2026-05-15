@@ -256,34 +256,60 @@ export default function CasaisPage() {
         {/* RESULTS */}
         {screen === 'results' && (
           <div className="animate-fade-in">
-            <div className="text-center mb-6">
+            <div className="text-center mb-5">
               <h2 className="font-display text-2xl text-wine">Seu Perfil 📊</h2>
               <p className="text-xs text-muted mt-1">Suas respostas em todas as situações</p>
             </div>
-            {RESULT_ROWS.map(row => {
-              const pct = Math.round((myCounts[row.key] / myTotal) * 100)
-              return (
-                <div
-                  key={row.key}
-                  className="flex items-center gap-3 mb-4 bg-white border border-wine/15 rounded-2xl p-4"
-                >
-                  <span className="text-3xl flex-shrink-0">{row.emoji}</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-prose">{row.label}</div>
-                    <div className="mt-1.5 h-2 bg-wine-pale rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${row.bar}`}
-                        style={{ width: `${pct}%` }}
-                      />
+
+            {/* Lista por situação */}
+            <div className="bg-white border border-wine/15 rounded-2xl overflow-hidden mb-5">
+              {situations.map((_sit, idx) => {
+                const sitK = `sit_${idx}`
+                const chosen = appState.votes?.[sitK]?.[myId] as VoteOption | undefined
+                const opt = chosen ? RESULT_ROWS.find(r => r.key === chosen) : null
+                return (
+                  <div key={idx} className="flex items-center gap-3 px-4 py-3 border-b border-wine/10 last:border-0">
+                    <span className="text-xs text-muted font-medium flex-shrink-0 w-20">Situação {idx + 1}</span>
+                    {opt ? (
+                      <>
+                        <span className="text-base flex-shrink-0">{opt.emoji}</span>
+                        <span className={`text-xs font-medium ${opt.color}`}>{opt.label}</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted italic">Não respondida</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Resumo percentual */}
+            <div className="bg-white border border-wine/15 rounded-2xl p-4 mb-4">
+              <p className="text-xs font-medium text-muted uppercase tracking-widest mb-4">
+                Perfil de respostas
+              </p>
+              {RESULT_ROWS.map(row => {
+                const pct = Math.round((myCounts[row.key] / myTotal) * 100)
+                return (
+                  <div key={row.key} className="flex items-center gap-3 mb-3 last:mb-0">
+                    <span className="text-xl flex-shrink-0">{row.emoji}</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium text-prose">{row.label}</span>
+                        <span className={`font-medium ${row.color}`}>{pct}%</span>
+                      </div>
+                      <div className="h-1.5 bg-wine-pale rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${row.bar}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <span className={`text-sm font-medium flex-shrink-0 ${row.color}`}>{pct}%</span>
-                </div>
-              )
-            })}
-            <div className="text-center text-xs text-muted mt-2 mb-4">
-              {myTotal} {myTotal === 1 ? 'situação respondida' : 'situações respondidas'}
+                )
+              })}
             </div>
+
             <div className="text-center text-muted text-sm py-3 bg-wine-pale rounded-xl animate-pulse">
               Aguardando próxima situação…
             </div>

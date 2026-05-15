@@ -217,25 +217,58 @@ export default function HostPage() {
             )}
 
             {state.phase === 'results' && (
-              <div>
-                <p className="text-xs text-muted text-center mb-3">
-                  Total acumulado de todas as situações ({allTotal} {allTotal === 1 ? 'voto' : 'votos'})
-                </p>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {VOTE_ROWS.map(row => (
-                    <div key={row.key} className={`rounded-xl p-3 text-center border-2 ${row.ring}`}>
-                      <span className="text-3xl block mb-1">{row.emoji}</span>
-                      <div className="text-xs text-muted font-medium">{row.label}</div>
-                      <div className={`font-display text-2xl mt-1 ${row.count}`}>{allCounts[row.key]}</div>
-                      <div className="h-1.5 bg-wine/10 rounded-full mt-2 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
-                          style={{ width: `${(allCounts[row.key] / allTotal) * 100}%` }}
-                        />
-                      </div>
+              <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-0.5">
+                {/* Breakdown por situação */}
+                {situations.map((_sit, idx) => {
+                  const sk = `sit_${idx}`
+                  const sitVotes = state.votes[sk] ?? {}
+                  const sitC = { fire: 0, silence: 0, mature: 0 }
+                  Object.values(sitVotes).forEach(v => { sitC[v as VoteOption]++ })
+                  const sitTotal = sitC.fire + sitC.silence + sitC.mature
+                  if (sitTotal === 0) return null
+                  return (
+                    <div key={idx} className="bg-wine-pale rounded-xl p-3">
+                      <p className="text-xs font-semibold text-wine mb-2">
+                        Situação {idx + 1} — {sitTotal} {sitTotal === 1 ? 'voto' : 'votos'}
+                      </p>
+                      {VOTE_ROWS.map(row => {
+                        const pct = Math.round((sitC[row.key] / sitTotal) * 100)
+                        return (
+                          <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                            <span className="text-sm w-5 flex-shrink-0">{row.emoji}</span>
+                            <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-medium w-8 text-right ${row.count}`}>{pct}%</span>
+                            <span className="text-xs text-muted w-4 text-right">{sitC[row.key]}</span>
+                          </div>
+                        )
+                      })}
                     </div>
-                  ))}
+                  )
+                })}
+
+                {/* Resultado geral consolidado */}
+                <div className="border-t border-wine/15 pt-3">
+                  <p className="text-xs text-muted text-center mb-2">
+                    Resultado geral — {allTotal} {allTotal === 1 ? 'voto' : 'votos'}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {VOTE_ROWS.map(row => (
+                      <div key={row.key} className={`rounded-xl p-2.5 text-center border-2 ${row.ring}`}>
+                        <span className="text-2xl block mb-0.5">{row.emoji}</span>
+                        <div className={`font-display text-xl mt-0.5 ${row.count}`}>
+                          {Math.round((allCounts[row.key] / allTotal) * 100)}%
+                        </div>
+                        <div className="text-xs text-muted">{allCounts[row.key]} votos</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
                 <button
                   onClick={resetVotes}
                   className="w-full py-2.5 bg-wine-pale text-wine rounded-xl text-sm font-medium hover:bg-pink-100 transition-colors cursor-pointer"
