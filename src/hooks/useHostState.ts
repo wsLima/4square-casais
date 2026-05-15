@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { buildVotes, buildState } from '../lib/stateUtils'
 import type { SessionRow, CoupleRow, VoteRow } from '../lib/stateUtils'
 import type { AppState, Phase } from '../types'
+import { situations } from '../data/situations'
 
 export function useHostState() {
   const [state, setState] = useState<AppState>({
@@ -91,7 +92,7 @@ export function useHostState() {
 
   const changeSituation = useCallback(async (dir: -1 | 1) => {
     const next = stateRef.current.currentSit + dir
-    if (next < 0 || next >= 4) return
+    if (next < 0 || next >= situations.length) return
     await updateSession({ current_sit: next, phase: 'waiting' })
   }, [updateSession])
 

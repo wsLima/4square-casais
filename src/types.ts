@@ -10,6 +10,11 @@ export interface Situation {
   title: string
   text: string
   comment: string
+  reactions?: {
+    fire: string
+    silence: string
+    mature: string
+  }
 }
 
 export interface AppState {

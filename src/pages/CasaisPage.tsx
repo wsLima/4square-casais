@@ -198,7 +198,9 @@ export default function CasaisPage() {
                   <span className="text-3xl flex-shrink-0">{opt.emoji}</span>
                   <div>
                     <div className={`font-medium text-sm ${opt.nameColor}`}>{opt.name}</div>
-                    <div className="text-xs text-muted mt-0.5 leading-snug">{opt.desc}</div>
+                    <div className="text-xs text-muted mt-0.5 leading-snug whitespace-pre-line">
+                      {sit.reactions ? sit.reactions[opt.key] : opt.desc}
+                    </div>
                   </div>
                 </button>
               ))}
