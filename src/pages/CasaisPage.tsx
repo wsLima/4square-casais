@@ -97,9 +97,14 @@ export default function CasaisPage() {
   const sit = situations[appState.currentSit]
 
   const votes = appState.votes?.[sitKey] ?? {}
-  const counts = { fire: 0, silence: 0, mature: 0 }
-  Object.values(votes).forEach(v => { counts[v]++ })
-  const total = counts.fire + counts.silence + counts.mature || 1
+
+  // Meus votos acumulados em todas as situações (para a tela de resultados)
+  const myCounts = { fire: 0, silence: 0, mature: 0 }
+  Object.values(appState.votes ?? {}).forEach(sitVotes => {
+    const v = sitVotes[myId]
+    if (v) myCounts[v]++
+  })
+  const myTotal = myCounts.fire + myCounts.silence + myCounts.mature || 1
 
   type Screen = 'login' | 'waiting' | 'voting' | 'voted' | 'results'
   let screen: Screen
@@ -251,9 +256,12 @@ export default function CasaisPage() {
         {/* RESULTS */}
         {screen === 'results' && (
           <div className="animate-fade-in">
-            <h2 className="font-display text-2xl text-wine text-center mb-6">Resultados 📊</h2>
+            <div className="text-center mb-6">
+              <h2 className="font-display text-2xl text-wine">Seu Perfil 📊</h2>
+              <p className="text-xs text-muted mt-1">Suas respostas em todas as situações</p>
+            </div>
             {RESULT_ROWS.map(row => {
-              const pct = Math.round((counts[row.key] / total) * 100)
+              const pct = Math.round((myCounts[row.key] / myTotal) * 100)
               return (
                 <div
                   key={row.key}
@@ -273,7 +281,10 @@ export default function CasaisPage() {
                 </div>
               )
             })}
-            <div className="text-center text-muted text-sm mt-6 py-3 bg-wine-pale rounded-xl animate-pulse">
+            <div className="text-center text-xs text-muted mt-2 mb-4">
+              {myTotal} {myTotal === 1 ? 'situação respondida' : 'situações respondidas'}
+            </div>
+            <div className="text-center text-muted text-sm py-3 bg-wine-pale rounded-xl animate-pulse">
               Aguardando próxima situação…
             </div>
           </div>

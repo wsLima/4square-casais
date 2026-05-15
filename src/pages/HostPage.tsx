@@ -30,7 +30,13 @@ export default function HostPage() {
   const counts = { fire: 0, silence: 0, mature: 0 }
   Object.values(votes).forEach(v => { counts[v]++ })
   const totalVotes = counts.fire + counts.silence + counts.mature
-  const total = totalVotes || 1
+
+  // Votos acumulados de todas as situações (para a tela de resultados)
+  const allCounts = { fire: 0, silence: 0, mature: 0 }
+  Object.values(state.votes).forEach(sitVotes => {
+    Object.values(sitVotes).forEach(v => { allCounts[v as VoteOption]++ })
+  })
+  const allTotal = allCounts.fire + allCounts.silence + allCounts.mature || 1
 
   const casaisUrl = `${window.location.protocol}//${window.location.host}/casais`
 
@@ -212,16 +218,19 @@ export default function HostPage() {
 
             {state.phase === 'results' && (
               <div>
+                <p className="text-xs text-muted text-center mb-3">
+                  Total acumulado de todas as situações ({allTotal} {allTotal === 1 ? 'voto' : 'votos'})
+                </p>
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {VOTE_ROWS.map(row => (
                     <div key={row.key} className={`rounded-xl p-3 text-center border-2 ${row.ring}`}>
                       <span className="text-3xl block mb-1">{row.emoji}</span>
                       <div className="text-xs text-muted font-medium">{row.label}</div>
-                      <div className={`font-display text-2xl mt-1 ${row.count}`}>{counts[row.key]}</div>
+                      <div className={`font-display text-2xl mt-1 ${row.count}`}>{allCounts[row.key]}</div>
                       <div className="h-1.5 bg-wine/10 rounded-full mt-2 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${row.bar}`}
-                          style={{ width: `${(counts[row.key] / total) * 100}%` }}
+                          style={{ width: `${(allCounts[row.key] / allTotal) * 100}%` }}
                         />
                       </div>
                     </div>
