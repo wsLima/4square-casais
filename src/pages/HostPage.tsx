@@ -218,19 +218,22 @@ export default function HostPage() {
                   Object.values(sitVotes).forEach(v => { sitC[v as VoteOption]++ })
                   const sitTotal = sitC.fire + sitC.silence + sitC.mature
                   if (sitTotal === 0) return null
+                  const rows = VOTE_ROWS.map(row => ({
+                    ...row,
+                    emoji: sit.optionOverrides?.[row.key]?.emoji ?? row.emoji,
+                    label: sit.optionOverrides?.[row.key]?.name ?? row.label,
+                  }))
                   return (
                     <div key={idx} className="bg-wine-pale rounded-xl p-3">
                       <p className="text-xs font-semibold text-wine mb-2">
                         Situação {idx + 1} — {sitTotal} {sitTotal === 1 ? 'voto' : 'votos'}
                       </p>
-                      {VOTE_ROWS.map(row => {
+                      {rows.map(row => {
                         const pct = Math.round((sitC[row.key] / sitTotal) * 100)
-                        const emoji = sit.optionOverrides?.[row.key]?.emoji ?? row.emoji
-                        const name = sit.optionOverrides?.[row.key]?.name ?? row.label
                         return (
                           <div key={row.key} className="flex items-center gap-2 mb-1.5 last:mb-0">
-                            <span className="text-sm w-5 flex-shrink-0">{emoji}</span>
-                            <span className="text-xs text-prose w-24 flex-shrink-0 truncate">{name}</span>
+                            <span className="text-sm w-5 flex-shrink-0">{row.emoji}</span>
+                            <span className="text-xs text-prose w-24 flex-shrink-0 truncate">{row.label}</span>
                             <div className="flex-1 h-1.5 bg-wine/10 rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${row.bar}`}

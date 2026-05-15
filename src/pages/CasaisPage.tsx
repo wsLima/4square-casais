@@ -268,15 +268,19 @@ export default function CasaisPage() {
               {situations.map((sitObj, idx) => {
                 const sitK = `sit_${idx}`
                 const chosen = appState.votes?.[sitK]?.[myId] as VoteOption | undefined
-                const opt = chosen ? RESULT_ROWS.find(r => r.key === chosen) : null
-                const override = chosen ? sitObj.optionOverrides?.[chosen] : null
+                const rows = RESULT_ROWS.map(row => ({
+                  ...row,
+                  emoji: sitObj.optionOverrides?.[row.key]?.emoji ?? row.emoji,
+                  label: sitObj.optionOverrides?.[row.key]?.name ?? row.label,
+                }))
+                const chosenRow = chosen ? rows.find(r => r.key === chosen) : null
                 return (
                   <div key={idx} className="flex items-center gap-3 px-4 py-3 border-b border-wine/10 last:border-0">
                     <span className="text-xs text-muted font-medium flex-shrink-0 w-20">Situação {idx + 1}</span>
-                    {opt ? (
+                    {chosenRow ? (
                       <>
-                        <span className="text-base flex-shrink-0">{override?.emoji ?? opt.emoji}</span>
-                        <span className={`text-xs font-medium ${opt.color}`}>{override?.name ?? opt.label}</span>
+                        <span className="text-base flex-shrink-0">{chosenRow.emoji}</span>
+                        <span className={`text-xs font-medium ${chosenRow.color}`}>{chosenRow.label}</span>
                       </>
                     ) : (
                       <span className="text-xs text-muted italic">Não respondida</span>
